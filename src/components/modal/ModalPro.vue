@@ -24,7 +24,7 @@
 				    <li>{{ translate("PAID.APPS") }}</li>
 				    <li>&#x00A3;{{ price1() }}</li>
 				</ul>
-                                <AppButton @click.native="updateCard(200000000000)" :disabled="disablePro" type="primary" block accent>{{proButtonText}}</AppButton>
+                                <AppButton @click.native="confirmUpdate(200000000000)" :disabled="disablePro" type="primary" block accent>{{proButtonText}}</AppButton>
 			    </div>
                             <div class="card__meta options">
 				<h3>Visionary {{ translate("PAID.ACCOUNT") }}</h3>
@@ -33,7 +33,7 @@
 				    <li>{{ translate("PAID.APPS") }}</li>
 				    <li>&#x00A3;{{ price2() }}  {{ prorataTextVisionary }}</li>
 				</ul>
-                                <AppButton @click.native="updateCard(1000000000000)" :disabled="disableVisionary" type="primary" block accent>{{visionaryButtonText}}</AppButton>
+                                <AppButton @click.native="confirmUpdate(1000000000000)" :disabled="disableVisionary" type="primary" block accent>{{visionaryButtonText}}</AppButton>
 			    </div>
                             <div class="card__meta options">
 				<h3>Pioneer {{ translate("PAID.ACCOUNT") }}</h3>
@@ -42,13 +42,21 @@
 				    <li>{{ translate("PAID.APPS") }}</li>
 				    <li>&#x00A3;{{ price3() }}  {{ prorataTextPioneer }}</li>
 				</ul>
-                                <AppButton @click.native="updateCard(3000000000000)" :disabled="disablePioneer" type="primary" block accent>{{pioneerButtonText}}</AppButton>
+                                <AppButton @click.native="confirmUpdate(3000000000000)" :disabled="disablePioneer" type="primary" block accent>{{pioneerButtonText}}</AppButton>
 			    </div>
                         </div>
 
 			<div v-if="showCard">
 			    <iframe id="paymentframe" style="border: none;" width="450px" height="420px" :src="paymentUrl" referrerpolicy="origin"/>
 			</div>
+                        <Confirm
+                        v-if="showConfirm"
+                        v-on:hide-confirm="showConfirm = false"
+                        :confirm_message='confirm_message'
+                        :confirm_body="confirm_body"
+                        :consumer_cancel_func="confirm_consumer_cancel_func"
+                        :consumer_func="confirm_consumer_func">
+                        </Confirm>
 
 		</template>
 		<template #footer>
@@ -61,12 +69,14 @@
 <script>
 const AppButton = require("../AppButton.vue");
 const AppModal = require("AppModal.vue");
+const Confirm = require("../confirm/Confirm.vue");
 const i18n = require("../../i18n/index.js");
 
 module.exports = {
 	components: {
 	    AppButton,
 	    AppModal,
+            Confirm,
 	},
         mixins:[i18n],
 	data() {
@@ -82,6 +92,11 @@ module.exports = {
                         currentAnnual: false,
                         annual: false,
                         currentFocusFunction:null,
+                        showConfirm: false,
+                        confirm_message: "",
+                        confirm_body: "",
+                        confirm_consumer_cancel_func: () => {},
+                        confirm_consumer_func: () => {},
 		};
 	},
 	computed: {
@@ -224,6 +239,14 @@ module.exports = {
 
             updateCardDetails() {
                 this.updateCard(this.paymentProperties.desiredMb()*1000*1000)
+            },
+
+            confirmUpdate(bytes) {
+                this.confirm_message = "Confirm plan change";
+                this.confirm_body = "Do you want to switch to the " + (this.annual ? "annual ": "monthly ") + (bytes/1000000000) + "GB plan?" + (this.annual ? " You will switch to annual and be billed at the end of your current billing month." : "");
+                var that = this;
+                this.confirm_consumer_func = () => that.updateCard(bytes),
+                this.showConfirm = true;
             },
             
     	    updateCard(desired) {

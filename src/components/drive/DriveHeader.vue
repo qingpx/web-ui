@@ -122,10 +122,12 @@ module.exports = {
 		},
 
 		askForDirectories() {
-                        if (typeof Android !== 'undefined')
+                        if (typeof Android !== 'undefined') {
                             Android.notifyDirectoryRequest();
-                        
-			document.getElementById('uploadDirectoriesInput').click();
+                            document.getElementById('uploadFileInput').click();
+                        } else {
+                            document.getElementById('uploadDirectoriesInput').click();
+                        }
 		},
 	},
 }

@@ -2002,12 +2002,24 @@ module.exports = {
             var files = evt.target.files || evt.dataTransfer.files;
             let that = this;
             let accumulatedFiles = [];
+            let isAndroidDirUpload = this.isLocalhostAndroid()
+                && files.length > 0 && files[0].name.indexOf('/') >= 0;
             for(var i = 0; i < files.length; i++) {
                 let fileEntry = files[i];
-                if (fileEntry.name != '.DS_Store') {
+                // On Android, file.name is the full relative path e.g. "Photos/vacation/img.jpg"
+                // Set the directory from it and override file.name to just the filename.
+                if (isAndroidDirUpload && fileEntry.name.indexOf('/') >= 0) {
+                    let lastSlash = fileEntry.name.lastIndexOf('/');
+                    let dir = fileEntry.name.substring(0, lastSlash);
+                    let filename = fileEntry.name.substring(lastSlash + 1);
+                    fileEntry.directory = dir.startsWith('/') ? dir : '/' + dir;
+                    Object.defineProperty(fileEntry, 'name', {value: filename, configurable: true});
+                } else if (fileEntry.name != '.DS_Store') {
                     fileEntry.directory = that.extractDirectory(fileEntry);
-                    accumulatedFiles.push(fileEntry);
+                } else {
+                    continue;
                 }
+                accumulatedFiles.push(fileEntry);
             }
             this.processFileUpload(accumulatedFiles);
         },
